@@ -11,78 +11,88 @@ namespace WebApi8_AdmissionTest.Services.Student
     {
         private readonly IMapper _mapper;
         private readonly AppDbContext _context;
+
         public StudentService(IMapper mapper, AppDbContext context)
         {
-             _mapper = mapper;
+            _mapper = mapper;
             _context = context;
         }
 
         public async Task<ResponseModel<StudentModel>> SearchStudentByCpf(string cpf)
-        {            
+        {
             try
             {
-                var student = await _context.Students.FirstOrDefaultAsync(studentData => studentData.Cpf == cpf);
-                return RetResponse(student, null);
+                var student = await _context.Students
+                    .FirstOrDefaultAsync(studentData => studentData.Cpf == cpf);
+
+                return RetResponse(student, null, "Aluno localizado!", "Nenhum registro localizado!");
             }
             catch (Exception ex)
             {
-                return RetResponse(null, ex);
+                return RetResponse<StudentModel>(null, ex);
             }
-
         }
 
         public async Task<ResponseModel<StudentModel>> SearchStudentByRa(int studentRa)
         {
-            ResponseModel<StudentModel> response = new ResponseModel<StudentModel>();
             try
             {
-                var student = await _context.Students.FirstOrDefaultAsync(studentData => studentData.Ra == studentRa);
-                return RetResponse(student, null);
+                var student = await _context.Students
+                    .FirstOrDefaultAsync(studentData => studentData.Ra == studentRa);
+
+                return RetResponse(student, null, "Aluno localizado!", "Nenhum registro localizado!");
             }
             catch (Exception ex)
             {
-                return RetResponse(null, ex);
+                return RetResponse<StudentModel>(null, ex);
             }
         }
 
-        public async Task<ResponseModel<StudentModel>> SearchStudentByName(string name)
+        public async Task<ResponseModel<List<StudentModel>>> SearchStudentByName(string name)
         {
-            ResponseModel<StudentModel> response = new ResponseModel<StudentModel>();
             try
             {
-                var student = await _context.Students.Where(p => EF.Functions.Like(p.Name, $"%{name}%")).FirstOrDefaultAsync();
+                var students = await _context.Students
+                    .AsNoTracking()
+                    .Where(p => EF.Functions.Like(p.Name, $"%{name}%"))
+                    .ToListAsync();
 
-                return RetResponse(student, null);
+                return RetResponse(students, null, "Alunos localizados!", "Nenhum registro localizado!");
             }
             catch (Exception ex)
             {
-                return RetResponse(null, ex);
+                return RetResponse<List<StudentModel>>(null, ex);
             }
         }
 
-        public ResponseModel<StudentModel> RetResponse(StudentModel student, Exception ex)
+        private ResponseModel<T> RetResponse<T>(T data, Exception ex, string successMsg = "Sucesso", string notFoundMsg = "Nenhum registro localizado!")
         {
-            ResponseModel<StudentModel> response = new ResponseModel<StudentModel>();
+            ResponseModel<T> response = new ResponseModel<T>();
+
             if (ex != null)
             {
                 response.Message = ex.Message;
                 response.Status = false;
-            }
-
-            if (student == null)
-            {
-                response.Message = "Nenhum registro localizado!";
                 return response;
             }
-            response.Data = student;
-            response.Message = "Aluno Localizado!";
 
+            if (data == null || (data is IEnumerable<object> list && !list.Any()))
+            {
+                response.Message = notFoundMsg;
+                response.Status = false;
+                return response;
+            }
+
+            response.Data = data;
+            response.Message = successMsg;
+            response.Status = true;
             return response;
         }
 
-        public async Task<ResponseModel<List<StudentModel>>> ListStudents(string? name = null,string? cpf = null,int page = 1,int pageSize = 10)
+        public async Task<ResponseModel<List<StudentModel>>> ListStudents(string? name = null, string? cpf = null, int page = 1, int pageSize = 10)
         {
             ResponseModel<List<StudentModel>> response = new ResponseModel<List<StudentModel>>();
+
             try
             {
                 var query = _context.Students.AsQueryable();
@@ -96,12 +106,12 @@ namespace WebApi8_AdmissionTest.Services.Student
                 int totalRegisters = await query.CountAsync();
                 int totalPages = (int)Math.Ceiling(totalRegisters / (double)pageSize);
 
-                var Students = await query
+                var students = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
 
-                response.Data = Students;
+                response.Data = students;
                 response.Message = "Lista de alunos retornada com sucesso!";
                 response.Status = true;
                 response.TotalPages = totalPages;
@@ -111,92 +121,77 @@ namespace WebApi8_AdmissionTest.Services.Student
             }
             catch (Exception ex)
             {
-                response.Message = ex.Message;
-                response.Status = false;
-                return response;
+                return RetResponse<List<StudentModel>>(null, ex);
             }
         }
 
-        public async Task<ResponseModel<List<StudentModel>>> CreateStudent(StudentCreateDto personDto)
+        public async Task<ResponseModel<List<StudentModel>>> CreateStudent(StudentCreateDto studentDto)
         {
-            ResponseModel<List<StudentModel>> response = new ResponseModel<List<StudentModel>> ();
-
             try
             {
-                var personModel = _mapper.Map<StudentModel>(personDto);
+                var cpfExistente = await _context.Students.AnyAsync(s => s.Cpf == studentDto.Cpf);
+                if (cpfExistente)
+                {
+                    return new ResponseModel<List<StudentModel>>
+                    {
+                        Status = false,
+                        Message = "CPF já cadastrado!"
+                    };
+                } 
+                var studentModel = _mapper.Map<StudentModel>(studentDto);
 
-                _context.Add(personModel);
+                _context.Add(studentModel);
                 await _context.SaveChangesAsync();
 
-                response.Data = await _context.Students.ToListAsync();
-                response.Message = "Aluno criado com sucesso";
-
-                return response;
+                var students = await _context.Students.ToListAsync();
+                return RetResponse(students, null, "Aluno criado com sucesso!", "Nenhum aluno localizado!");
             }
             catch (Exception ex)
             {
-                response.Message = ex.InnerException?.Message ?? ex.Message;
-                response.Status = false;
-                return response;
+                return RetResponse<List<StudentModel>>(null, ex);
             }
         }
 
-        public async Task<ResponseModel<List<StudentModel>>> EditStudent(StudentEditDto putPerson)
+        public async Task<ResponseModel<List<StudentModel>>> EditStudent(StudentEditDto putstudent)
         {
-            ResponseModel<List<StudentModel>> response = new ResponseModel<List<StudentModel>>();
-
             try
             {
-                var student = await _context.Students.FirstOrDefaultAsync(studentData => studentData.Ra == putPerson.Ra);
+                var student = await _context.Students.FirstOrDefaultAsync(studentData => studentData.Ra == putstudent.Ra);
 
                 if (student == null)
-                {
-                    response.Message = "Nenhum aluno localizado!";
-                    return response;
-                }
+                    return RetResponse<List<StudentModel>>(null, null, "", "Nenhum aluno localizado!");
 
-                _mapper.Map(putPerson, student);
+                _mapper.Map(putstudent, student);
                 _context.Update(student);
                 await _context.SaveChangesAsync();
 
-                response.Data = await _context.Students.ToListAsync();
-                response.Message = "Aluno criado com sucesso"; 
-                return response;
+                var students = await _context.Students.ToListAsync();
+                return RetResponse(students, null, "Aluno editado com sucesso!", "Nenhum aluno localizado!");
             }
             catch (Exception ex)
             {
-                response.Message = ex.InnerException?.Message ?? ex.Message;
-                response.Status = false;
-                return response;
+                return RetResponse<List<StudentModel>>(null, ex);
             }
         }
 
-        public async Task<ResponseModel<List<StudentModel>>> DeleteStudent(int raPerson)
+        public async Task<ResponseModel<List<StudentModel>>> DeleteStudent(int rastudent)
         {
-            ResponseModel<List<StudentModel>> response = new ResponseModel<List<StudentModel>>();
-
             try
             {
-                var student = await _context.Students.FirstOrDefaultAsync(personData => personData.Ra == raPerson);
+                var student = await _context.Students.FirstOrDefaultAsync(studentData => studentData.Ra == rastudent);
 
                 if (student == null)
-                {
-                    response.Message = "Nenhum aluno localizado!";
-                    return response;
-                }
+                    return RetResponse<List<StudentModel>>(null, null, "", "Nenhum aluno localizado!");
 
                 _context.Remove(student);
                 await _context.SaveChangesAsync();
 
-                response.Data = await _context.Students.ToListAsync();
-                response.Message = "Aluno excluido com sucesso!";
-                return response;
+                var students = await _context.Students.ToListAsync();
+                return RetResponse(students, null, "Aluno excluído com sucesso!", "Nenhum aluno localizado!");
             }
             catch (Exception ex)
             {
-                response.Message = ex.InnerException?.Message ?? ex.Message;
-                response.Status = false;
-                return response;
+                return RetResponse<List<StudentModel>>(null, ex);
             }
         }
     }

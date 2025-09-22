@@ -1,0 +1,44 @@
+ @@ Decisão da Arquitetura ->
+
+O projeto segue uma arquitetura em camadas, inspirada no padrão Clean Architecture / Onion Architecture, separando responsabilidades de forma clara:
+
+Controllers: Recebem as requisições HTTP e chamam os serviços correspondentes.
+
+Services: Contêm a lógica de negócio da aplicação, tratando regras específicas do domínio.
+
+DTOs: Objetos de transferência de dados, utilizados para definir a estrutura de entrada e saída entre camada de Controller e Service.
+
+Models: Representam as entidades do sistema, como o StudentModel.
+
+Data / Repositories: Camada responsável pelo acesso a banco de dados, abstraindo consultas e persistência.
+
+Essa estrutura permite maior manutenção, testabilidade (testes unitários futuramente) e separação de responsabilidades, facilitando futuras mudanças ou expansão do sistema.
+
+
+@@ Bibliotecas de Terceiros Utilizadas ->
+
+O projeto utiliza algumas bibliotecas externas para facilitar desenvolvimento, UI e validações:
+
+Vue.js 3 – Framework frontend para construção da interface reativa.
+
+Vue Router – Gerenciamento de rotas no SPA.
+
+Pinia – Gerenciamento de estado da aplicação.
+
+Axios – Comunicação com API HTTP.
+
+Vuetify – Biblioteca de componentes UI para Vue.js, utilizada para formulários, listas, botões e modais.
+
+Vue Toastification – Biblioteca para exibição de notificações (toasts) no frontend.
+
+VeeValidate – Validação de formulários no frontend.
+
+Essas bibliotecas foram escolhidas por serem maduras, bem documentadas e compatíveis com Vue 3, agilizando o desenvolvimento e garantindo consistência visual e lógica de validação.
+
+
+@@ O que eu melhoraria se tivesse mais tempo - >
+
+Adicionaria os testes unitários
+
+Adicionaria a opção de cadastrar uma foto para o aluno
+

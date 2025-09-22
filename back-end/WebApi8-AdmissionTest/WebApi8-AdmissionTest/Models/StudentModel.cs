@@ -12,7 +12,7 @@ namespace WebApi8_AdmissionTest.Models
         public string Name { get; set; }
 
         [Required(ErrorMessage = "O CPF é obrigatório.")]
-        [RegularExpression(@"^\d{3}\.\d{3}\.\d{3}-\d{2}$", ErrorMessage = "CPF inválido. Use o formato 000.000.000-00.")]
+        [RegularExpression(@"^\d{11}$", ErrorMessage = "CPF inválido. Deve conter 11 dígitos.")]
         public string Cpf { get; set; }
 
         [Required(ErrorMessage = "O Email é obrigatório.")]
