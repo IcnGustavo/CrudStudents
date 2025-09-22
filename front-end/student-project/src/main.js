@@ -6,7 +6,6 @@
 
 import { createApp } from 'vue'
 import Toast from 'vue-toastification'
-import { createVuetify } from 'vuetify'
 // Plugins
 import { registerPlugins } from '@/plugins'
 
@@ -19,7 +18,6 @@ import 'unfonts.css'
 // Composables
 import 'vue-toastification/dist/index.css'
 import 'vuetify/styles'
-const vuetify = createVuetify()
 const app = createApp(App)
 
 app.use(Toast, {
@@ -32,4 +30,4 @@ app.use(Toast, {
 
 registerPlugins(app)
 
-app.use(vuetify).mount('#app')
+app.mount('#app')

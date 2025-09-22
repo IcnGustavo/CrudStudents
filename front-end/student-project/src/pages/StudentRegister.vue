@@ -134,7 +134,7 @@
 
     if (!validateForm()) return
 
-    if (!(await checkCpfUnique(cpf.value))) {
+    if (!(await checkCpfUnique(cpf.value)) && !isEdit) {
       toast.error('CPF já cadastrado!')
       return
     }

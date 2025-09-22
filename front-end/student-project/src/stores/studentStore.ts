@@ -22,7 +22,7 @@ export const useStudentStore = defineStore('student', {
     currentPage: 1,
   }),
   actions: {
-    async fetchStudents(page: number, pageSize: number) {
+    async fetchStudents (page: number, pageSize: number) {
       try {
         const response = await getStudents('', '', page, pageSize)
         if (response?.data) {
@@ -57,7 +57,6 @@ export const useStudentStore = defineStore('student', {
     async fetchStudentByCpf (cpf: string) {
       try {
         const response = await getStudentByCpf(cpf)
-        console.log(response)
         this.students = response?.data ? [response.data.data] : []
         return response
       } catch (error) {
